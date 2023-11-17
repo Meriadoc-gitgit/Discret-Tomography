@@ -84,10 +84,13 @@ def T2(seq, j, l, L=M*[0]) :
 
   # Cas 2b
   elif j==seq[l-1]-1 : 
-    for i in range(j+1) : 
-      if L[i]==-1 : L[i] = 1
-      elif L[i]==0 : return False
-    return True
+    if l==1 : 
+      for i in range(j+1) : 
+        if L[i]==-1 : L[i] = 1
+        elif L[i]==0 : return False
+      return True
+    else : 
+      return T2(seq, j-1, l, L)
   # Cas 2c
   elif j>seq[l-1]-1 : 
     if L[j]==-1 : 
@@ -156,6 +159,7 @@ def possible_coloration(bloc, length) :
     glob.append(L_res)
   return glob
 
+
 def colorLine(bloc, length) : 
 
   glob = possible_coloration(bloc, length)
@@ -187,7 +191,6 @@ def colorCol(bloc, current_line, length) :
       if list_glob[i][j]!=current_line[j] and current_line[j] in [0,1] and list_glob[i] in glob: 
         glob.remove(tmp)
 
-
   res = glob[0]
   L = [-1]*length
   for i in range(length) : 
@@ -198,42 +201,60 @@ def colorCol(bloc, current_line, length) :
       L[i] = 0
   return L
 
+
+
+
 def copie_matrix(M) : 
   L = [[-1]*len(M[0])]*len(M)
   for i in range(len(M)) : 
     L[i] = M[i].copy()
   return L
 
-def Propagation(list_line, list_col, Mtx) :   
+
+
+def Coloration(list_line, list_col, Mtx) :   
   N = len(Mtx)
   M = len(Mtx[0])
-
+  A = copie_matrix(Mtx)
   # Pour lignes
   for i in range(N) : 
     colored = colorLine(list_line[i], M)
     Mtx[i] = colored
-  print(Mtx)
+  
   # Pour colonnes
   for i in range(M) : 
-    col = [Mtx[k][i] for k in range(N)]
-    if T2(list_col[i], N-1, len(list_col[i]), col) : 
-      colored = colorCol(list_col[i], col, N)
-      print("colored",colored)
+    col = [A[k][i] for k in range(N)]
+    colored = colorCol(list_col[i], col, N)
+    if T2(list_col[i], N-1, len(list_col[i]), colored) : 
       for k in range(N) : 
-        if Mtx[k][i]==-1 : 
-          Mtx[k][i] = colored[k]
-  
-  print(Mtx)
-  # Color 1
-  for i in range(N) : 
-    line = Mtx[i]
-    for j in range(M) :
-      col = [Mtx[k][j] for k in range(N)]
-      if Mtx[i][j]==-1 :  
-        line[i] = 1
-        col[j] = 1
-      if T2(list_line[i],M-1,len(list_line[i]),line) and T2(list_col[j],N-1,len(list_col[j]),col) and Mtx[i][j]==-1: 
-        Mtx[i][j] = 1
+        if A[k][i]==-1 :
+          A[k][i] = colored[k]
+          line = A[k].copy()
+          if not T2(list_line[k], M-1, len(list_line[k]), line) : 
+            A[k][i] = -1
 
+  # Blend les 2 matrices
+  for i in range(N) : 
+    for j in range(M) : 
+      if Mtx[i][j]!=A[i][j] and Mtx[i][j]==-1 : 
+        Mtx[i][j] = A[i][j]
+  
+  # Colorier 1 dans les cas restants
+  for i in range(N) : 
+    for j in range(M) :
+      if Mtx[i][j]==-1 : 
+        Mtx[i][j] = 1 
+        line = Mtx[i].copy()
+        col = [Mtx[k][j] for k in range(N)] 
+        P = T2(list_col[j], N-1, len(list_col[j]), col)
+        Q = T2(list_line[i], M-1, len(list_line[i]), line)
+        if not P or not Q : 
+          Mtx[i][j] = -1
+
+  # Fill the blank with 0
+  for i in range(N) : 
+    for j in range(M) :
+      if Mtx[i][j]==-1 : 
+        Mtx[i][j] = 0
 
   return Mtx
