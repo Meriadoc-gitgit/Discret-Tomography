@@ -1,260 +1,174 @@
-#####
+###############
 # INFORMATION DE BINOMES
-#####
+###############
 # Hoang Thuy Duong VU | 21110221
 # Halimatou DIALLO | 21114613
-####
-
-
-####
-# UN PROBLÈME DE TOMOGRAPHIE DISCRÈTE
-####
-
+##############
 
 # Import necessary libraries
 import numpy as np
 
-# Define constant width x length
-M = 15
 
 
-#####
-# 1 - MÉTHODE INCOMPLÈTE DE RÉSOLUTION 
-#####
-# 1.1 - PREMIÈRE ÉTAPE
-####
-
-def T(seq, j, l, L=M*[0]) : 
+###############
+# VÉRIFICATION DE CONFORMITÉ
+###############
+def check_conformity(sequence, number_of_cases, active_index, line) : 
   """
   Paramètre : 
-    L : ligne considérée de longueur M de zéros par défaut
-    seq : séquence s considérer pour la coloration
-    j : le nombre de cases on a besoin de colorier
-    l : index l indiquant l'index courant de seq, dont l premiers blocs de la ligne 
-  Retourne 0 si c'est possible de colorier et 1 sinon
+    sequence : séquence de bloc à colorer sur chaque ligne `line`
+    number_of_cases (j) : nombre number_of_cases+1 des cases à colorier
+    active_index (l) : indice active du bloc dans la liste `sequence` des blocs à colorier
+    line : ligne à colorier
+  Retoure `True` si c'est possible de colorier et `False` sinon
   """
 
-  # Cas de base l=0
-  if l==0: 
-    for i in range(j+1) : 
-      if L[i]==True : return False
-    return True
+  # Cas de base où l = 0
+  if active_index==0 : 
+    list_one = [i for i in line[0:number_of_cases+1] if i==1]
+    #for i in range(number_of_cases+1) : 
+      #if line[i]==1 : return False
+    return True if len(list_one)==0 else False
+  
+  # Cas 2a : j < s[l]-1
+  elif number_of_cases<sequence[active_index-1]-1 : return False
 
-  # Cas 2a
-  elif j<seq[l-1]-1 : return False
+  # Cas 2b : j = s[l]-1
+  elif number_of_cases==sequence[active_index-1]-1 : 
+    if active_index==1 : 
+      list_zero = [i for i in line[0:number_of_cases+1] if i==0]
+      #for i in range(number_of_cases+1) : 
+        #if line[i]==0 : return False
+      return True if len(list_zero)==0 else False
+    else : return check_conformity(sequence, number_of_cases-1, active_index, line)
+  
+  # Cas 2c : j > s[l]-1
+  elif number_of_cases>sequence[active_index-1]-1 : 
+    if line[number_of_cases]==-1 : 
+      hypo0 = line[0:number_of_cases]+[0]
+      hypo1 = line[0:number_of_cases]+[1]
 
-  # Cas 2b
-  elif j==seq[l-1]-1 : 
-    for i in range(j+1) : 
-      if L[i]==False : return False
-    return True
+      P = check_conformity(sequence, number_of_cases, active_index, hypo0)
+      Q = check_conformity(sequence, number_of_cases, active_index, hypo1)
 
-  # Cas 2c
-  elif j>seq[l-1]-1 : 
-    if L[j]==1 : 
-      for i in range(j-seq[l-1]+1,j) : 
-        if L[i]==False : return False
-      if L[j-seq[l-1]]==True : return False
-      else : return T(seq, j-seq[l-1]-1, l-1, L)
-    else : return T(seq, j-1, l, L)
+      # Cas 1 : si P et Q sont tous faux
+      if not (P or Q) : return False
 
-
-#####
-# 1.2 - GÉNÉRALISATION
-####
-def T2(seq, j, l, L=M*[0]) : 
-  """
-  Paramètre : 
-    L : ligne considérée de longueur M de zéros par défaut
-    seq : séquence s considérer pour la coloration
-    j : le nombre de cases on a besoin de colorier
-    l : index l indiquant l'index courant de seq, dont l premiers blocs de la ligne 
-  Retourne 0 si c'est possible de colorier et 1 sinon
-  """
-  if L==len(L)*[0] : return True
-
-  # Cas de base l=0
-  if l==0: 
-    for i in range(j+1) : 
-      if L[i]==1 : return False
-    return True
-
-  # Cas 2a
-  elif j<seq[l-1]-1 : return False
-
-  # Cas 2b
-  elif j==seq[l-1]-1 : 
-    if l==1 : 
-      for i in range(j+1) : 
-        if L[i]==-1 : L[i] = 1
-        elif L[i]==0 : return False
-      return True
-    else : 
-      return T2(seq, j-1, l, L)
-  # Cas 2c
-  elif j>seq[l-1]-1 : 
-    if L[j]==-1 : 
-      tmp0 = L[0:j]+[0]
-      #print(tmp0)
-      tmp1 = L[0:j]+[1]
-      #print(tmp1)
-      b0 = T2(seq, j, l, tmp0)
-      b1 = T2(seq, j, l, tmp1)
-      #print(tmp0, tmp1, L)
-      if not (b0 or b1) : return False
-      elif not b0 and b1 : 
-        for i in range(j+1) : 
-          L[i] = tmp1[i]
+      # Cas 2 : si une entre les deux sont vrais
+      elif not P and Q : 
+        # P faux et Q vrai 
+        line = hypo1+line[j:]
         return True
-      elif b0 and not b1 : 
-        for i in range(j+1) : 
-          L[i] = tmp0[i]
+
+      elif P or not Q : 
+        # P vrai et Q faux
+        line = hypo0+line[j:]
         return True
+
+      # Cas 3 : si P et Q sont tous vrais
       else : 
         for i in range(j+1) : 
-          if tmp0[i]==tmp1[i] : 
-            L[i] = tmp1[i]
-        return True
-    elif L[j]==1 : 
+          if hypo0[i]==hypo1[i] : 
+            line[i] = hypo0[i]
+        return True 
 
-      for i in range(j-seq[l-1]+1,j) : 
-        if L[i]==0 : return False
-      if L[j-seq[l-1]]==1 : return False
-      else : return T2(seq, j-seq[l-1]-1, l-1, L)
-    else : return T2(seq, j-1, l, L)
+    elif line[number_of_cases]==1 : 
+      # Vérifier si le bloc est bien colorié en noir
+      for i in range(number_of_cases-sequence[active_index-1]+1, number_of_cases) : 
+        if line[i]==0 : return False 
+
+      # Vérifier si le case suivant du bloc est colorié différemment que celle du bloc
+      if line[number_of_cases-sequence[active_index-1]]==1 : return False
+      else : 
+        return check_conformity(sequence, number_of_cases-sequence[active_index-1]-1, active_index-1, line)
+
+    else : 
+      return check_conformity(sequence, number_of_cases-1, active_index, line)
 
 
 
-#####
-# 1.3 - PROPAGATION
-####
+
+###############
+# RECOPIER UNE MATRICE
+###############
+def CopierMatrice(Matrix) : 
+  N = len(Matrix)
+  M = len(Matrix[0])
+  A = [0*M]*N
+  for n in range(N) : 
+    A[n] = Matrix[n].copy()
+
+  return A
+ 
+ 
+###############
+# COLORATION DES LIGNES ET COLONNES 
+###############
 from itertools import combinations
 
-def possible_coloration(bloc, length) : 
-  
-  nb_bloc = len(bloc) 
-  nb_bloc_useless = length - np.sum(bloc) - (len(bloc)-1)
-  opts = combinations(range(nb_bloc+nb_bloc_useless), nb_bloc)
-  
+def CalculPossibititesConstant(current_line, bloc, length) : 
+  n_groups = len(bloc)
+  n_empty = length-2*n_groups+1
+  opts = combinations(range(n_groups+n_empty), n_groups)
+
   possible_placement = []
   glob = []
-  for p in opts :
-    total = 0
-    for i in range(len(bloc)) : 
-      total += p[i]+bloc[i]
-    if total<=length or length - len(bloc)==len(bloc)-1 : 
+
+  for p in opts : 
+    total = np.max(p) + np.sum(bloc)
+    if total<=length : 
       possible_placement.append(p)
-  
+      
   for p in possible_placement : 
-    L_res = []
-    for i in range(len(bloc)) : 
-      if i>=1 :  
-        L_res += [0]*(p[i]-p[i-1])+[1]*bloc[i]
-      else : 
-        L_res += [0]*(p[i])+[1]*bloc[i]
+    sequence = []
+    for i in range(n_groups) : 
+      if i>=1 : 
+        sequence+=[0]*(p[i]-p[i-1]) + [1]*bloc[i]
+      else : sequence += [0]*p[i] + [1]*bloc[i]
 
-    while len(L_res)<length : 
-      L_res.append(0)
-  
-    glob.append(L_res)
-  return glob
+    empty = length-len(sequence)
+    sequence+=[0]*empty
+    glob.append(sequence)
 
-
-def colorLine(bloc, length) : 
-
-  glob = possible_coloration(bloc, length)
-  if len(glob)==1 : 
-    return glob[0]
-
-  if len(glob)==0 : 
-    return [-1]*length
-  res = glob[0]
-  L = [-1]*length
-  for i in range(length) : 
-    col = [glob[k][i] for k in range(len(glob))]
-    if np.sum(col)==len(glob) : 
-      L[i] = 1
-    elif np.sum(col)==0 : 
-      L[i] = 0
-  return L
-
-
-
-def colorCol(bloc, current_line, length) : 
-
-  glob = possible_coloration(bloc, length)
   list_glob = glob.copy()
+  for possible in list_glob : 
+    for i in range(length) : 
+      if possible[i]!=-1 and current_line[i]!=-1 and current_line[i]!=possible[i] and possible in glob :
+        glob.remove(possible)
 
-  for i in range(len(list_glob)) : 
-    for j in range(len(list_glob[i])) : 
-      tmp = list_glob[i]
-      if list_glob[i][j]!=current_line[j] and current_line[j] in [0,1] and list_glob[i] in glob: 
-        glob.remove(tmp)
-
-  res = glob[0]
-  L = [-1]*length
+  finalist = []
   for i in range(length) : 
-    col = [glob[k][i] for k in range(len(glob))]
-    if np.sum(col)==len(glob) : 
-      L[i] = 1
-    elif np.sum(col)==0 : 
-      L[i] = 0
-  return L
+    tmp = [glob[k][i] for k in range(len(glob))]
+    if tmp==[0]*len(glob) : 
+      finalist.append(0)  
+    elif tmp==[1]*len(glob) : 
+      finalist.append(1)
+    else : 
+      finalist.append(-1)
+
+  return finalist
 
 
 
+def is_finish(Matrix) : 
+  N = len(Matrix)
+  M = len(Matrix[0])
+  list_neg = [Matrix[i][j] for i in range(N) for j in range(M) if Matrix[i][j]==-1]
 
-def copie_matrix(M) : 
-  L = [[-1]*len(M[0])]*len(M)
-  for i in range(len(M)) : 
-    L[i] = M[i].copy()
-  return L
+  return True if len(list_neg)==0 else False
 
+def ColoreLigne(Matrix, index, sequence, current_line) : 
+  """
+  Paramètre : 
+    Matrix : matrice à traiter
+    sequence : séquence de bloc à colorer sur chaque ligne `line`
+    current_line : ligne à colorier
+  Retoure `True` si c'est possible de colorier et `False` sinon
+  """
+  length = len(current_line)
+  possible_coloration = CalculPossibititesConstant(current_line, sequence, length)
+  Matrix[index] = possible_coloration.copy()
 
+  return is_finish(Matrix), Matrix
 
-def Coloration(list_line, list_col, Mtx) :   
-  N = len(Mtx)
-  M = len(Mtx[0])
-  A = copie_matrix(Mtx)
-  # Pour lignes
-  for i in range(N) : 
-    colored = colorLine(list_line[i], M)
-    Mtx[i] = colored
-  
-  # Pour colonnes
-  for i in range(M) : 
-    col = [A[k][i] for k in range(N)]
-    colored = colorCol(list_col[i], col, N)
-    if T2(list_col[i], N-1, len(list_col[i]), colored) : 
-      for k in range(N) : 
-        if A[k][i]==-1 :
-          A[k][i] = colored[k]
-          line = A[k].copy()
-          if not T2(list_line[k], M-1, len(list_line[k]), line) : 
-            A[k][i] = -1
-
-  # Blend les 2 matrices
-  for i in range(N) : 
-    for j in range(M) : 
-      if Mtx[i][j]!=A[i][j] and Mtx[i][j]==-1 : 
-        Mtx[i][j] = A[i][j]
-  
-  # Colorier 1 dans les cas restants
-  for i in range(N) : 
-    for j in range(M) :
-      if Mtx[i][j]==-1 : 
-        Mtx[i][j] = 1 
-        line = Mtx[i].copy()
-        col = [Mtx[k][j] for k in range(N)] 
-        P = T2(list_col[j], N-1, len(list_col[j]), col)
-        Q = T2(list_line[i], M-1, len(list_line[i]), line)
-        if not P or not Q : 
-          Mtx[i][j] = -1
-
-  # Fill the blank with 0
-  for i in range(N) : 
-    for j in range(M) :
-      if Mtx[i][j]==-1 : 
-        Mtx[i][j] = 0
-
-  return Mtx
+def 

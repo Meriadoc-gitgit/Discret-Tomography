@@ -1,3 +1,0 @@
-4 2 3 3 : xxxx..xx  ..  xxx..xxx 
-j = 8, l = 2
-
