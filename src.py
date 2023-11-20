@@ -7,90 +7,81 @@
 
 # Import necessary libraries
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 
-###############
-# VÉRIFICATION DE CONFORMITÉ
-###############
-def check_conformity(sequence, number_of_cases, active_index, line) : 
-  """
-  Paramètre : 
-    sequence : séquence de bloc à colorer sur chaque ligne `line`
-    number_of_cases (j) : nombre number_of_cases+1 des cases à colorier
-    active_index (l) : indice active du bloc dans la liste `sequence` des blocs à colorier
-    line : ligne à colorier
-  Retoure `True` si c'est possible de colorier et `False` sinon
-  """
+def coloring_chain(L, seq, j, l) : 
+  if l==0 : 
+    for i in range(j+1) : 
+      if L[i]==1 : return False
+    for i in range(j+1) : 
+      if L[i]==-1 : L[i] = 0
+    return True
 
-  # Cas de base où l = 0
-  if active_index==0 : 
-    list_one = [i for i in line[0:number_of_cases+1] if i==1]
-    #for i in range(number_of_cases+1) : 
-      #if line[i]==1 : return False
-    return True if len(list_one)==0 else False
+  elif j<seq[l-1]-1 : return False
+  elif j==seq[l-1]-1 :
+    if l==1 : 
+      for i in range(j+1) : 
+        if L[i]==0 : return False
+      for i in range(j+1) : 
+        if L[i]==-1 : L[i] = 1 
+      return True
+    else : return False
   
-  # Cas 2a : j < s[l]-1
-  elif number_of_cases<sequence[active_index-1]-1 : return False
+  else : 
+    if L[j]==0 : return coloring_chain(L, seq, j-1, l)
+    elif L[j]==1 : 
+      if L[j-seq[l-1]]==1 : return False
 
-  # Cas 2b : j = s[l]-1
-  elif number_of_cases==sequence[active_index-1]-1 : 
-    if active_index==1 : 
-      list_zero = [i for i in line[0:number_of_cases+1] if i==0]
-      #for i in range(number_of_cases+1) : 
-        #if line[i]==0 : return False
-      return True if len(list_zero)==0 else False
-    else : return check_conformity(sequence, number_of_cases-1, active_index, line)
-  
-  # Cas 2c : j > s[l]-1
-  elif number_of_cases>sequence[active_index-1]-1 : 
-    if line[number_of_cases]==-1 : 
-      hypo0 = line[0:number_of_cases]+[0]
-      hypo1 = line[0:number_of_cases]+[1]
+      for i in range(j-seq[l-1]+1, j) : 
+        if L[i]==0 : return False
 
-      P = check_conformity(sequence, number_of_cases, active_index, hypo0)
-      Q = check_conformity(sequence, number_of_cases, active_index, hypo1)
-
-      # Cas 1 : si P et Q sont tous faux
-      if not (P or Q) : return False
-
-      # Cas 2 : si une entre les deux sont vrais
-      elif not P and Q : 
-        # P faux et Q vrai 
-        line = hypo1+line[j:]
-        return True
-
-      elif P or not Q : 
-        # P vrai et Q faux
-        line = hypo0+line[j:]
-        return True
-
-      # Cas 3 : si P et Q sont tous vrais
-      else : 
-        for i in range(j+1) : 
-          if hypo0[i]==hypo1[i] : 
-            line[i] = hypo0[i]
-        return True 
-
-    elif line[number_of_cases]==1 : 
-      # Vérifier si le bloc est bien colorié en noir
-      for i in range(number_of_cases-sequence[active_index-1]+1, number_of_cases) : 
-        if line[i]==0 : return False 
-
-      # Vérifier si le case suivant du bloc est colorié différemment que celle du bloc
-      if line[number_of_cases-sequence[active_index-1]]==1 : return False
-      else : 
-        return check_conformity(sequence, number_of_cases-sequence[active_index-1]-1, active_index-1, line)
-
+      if L[j-seq[l-1]]==-1 : L[j-seq[l-1]] = 0
+      for i in range(j-seq[l-1]+1, j) : 
+        if L[i]==-1 : L[i] = 1
+      return coloring_chain(L, seq, j-seq[l-1]-1, l-1)
     else : 
-      return check_conformity(sequence, number_of_cases-1, active_index, line)
+      hypo0 = L[:j] + [0]
+      hypo1 = L[:j] + [1]
+      P = coloring_chain(hypo0, seq, j, l)
+      Q = coloring_chain(hypo1, seq, j, l)
+      if not (P or Q) : return False 
+      elif not Q : 
+        for i in range(j+1) : 
+          if L[i]!=hypo0[i] : L[i] = hypo0[i]
+      elif not P : 
+        for i in range(j+1) : 
+          if L[i]!=hypo1[i] : L[i] = hypo1[i]
+      else : 
+        for i in range(j) : 
+          if hypo0[i]==hypo1[i] and L[i]!=hypo0[i] :
+            L[i] = hypo0[i]
+      return True
 
 
+# Pour lire un fichier
+def read_file(file_name):
+  count = 0
+  res = 0
+  global_list = []
+  with open(file_name, 'r') as file:
+    for line in file : 
+      if line=="#\n" : 
+        res = count
+      else : 
+        count+=1
+        numbers = list(map(int, line.split()))
+        if len(numbers)==0 : 
+          global_list.append([0])
+        else : global_list.append(numbers)
+
+  first_half_list = global_list[:res]
+  second_half_list = global_list[res:]
+      
+  return first_half_list, second_half_list
 
 
-###############
-# RECOPIER UNE MATRICE
-###############
 def CopierMatrice(Matrix) : 
   N = len(Matrix)
   M = len(Matrix[0])
@@ -100,54 +91,6 @@ def CopierMatrice(Matrix) :
 
   return A
  
- 
-###############
-# COLORATION DES LIGNES ET COLONNES 
-###############
-from itertools import combinations
-
-def CalculPossibititesConstant(current_line, bloc, length) : 
-  n_groups = len(bloc)
-  n_empty = length-2*n_groups+1
-  opts = combinations(range(n_groups+n_empty), n_groups)
-
-  possible_placement = []
-  glob = []
-
-  for p in opts : 
-    total = np.max(p) + np.sum(bloc)
-    if total<=length : 
-      possible_placement.append(p)
-      
-  for p in possible_placement : 
-    sequence = []
-    for i in range(n_groups) : 
-      if i>=1 : 
-        sequence+=[0]*(p[i]-p[i-1]) + [1]*bloc[i]
-      else : sequence += [0]*p[i] + [1]*bloc[i]
-
-    empty = length-len(sequence)
-    sequence+=[0]*empty
-    glob.append(sequence)
-
-  list_glob = glob.copy()
-  for possible in list_glob : 
-    for i in range(length) : 
-      if possible[i]!=-1 and current_line[i]!=-1 and current_line[i]!=possible[i] and possible in glob :
-        glob.remove(possible)
-
-  finalist = []
-  for i in range(length) : 
-    tmp = [glob[k][i] for k in range(len(glob))]
-    if tmp==[0]*len(glob) : 
-      finalist.append(0)  
-    elif tmp==[1]*len(glob) : 
-      finalist.append(1)
-    else : 
-      finalist.append(-1)
-
-  return finalist
-
 
 
 def is_finish(Matrix) : 
@@ -157,18 +100,120 @@ def is_finish(Matrix) :
 
   return True if len(list_neg)==0 else False
 
-def ColoreLigne(Matrix, index, sequence, current_line) : 
+
+def ColoreLigne(Matrix, index, sequence) : 
   """
   Paramètre : 
     Matrix : matrice à traiter
-    sequence : séquence de bloc à colorer sur chaque ligne `line`
-    current_line : ligne à colorier
-  Retoure `True` si c'est possible de colorier et `False` sinon
+    index : indice de la ligne à traiter
+    sequence : séquence de bloc à colorer sur chaque ligne `current_line`
+  Retoure `True` si la matrice est finie de colorer et `False` sinon, avec la matrice déjà traiter
   """
-  length = len(current_line)
-  possible_coloration = CalculPossibititesConstant(current_line, sequence, length)
-  Matrix[index] = possible_coloration.copy()
+  M = len(Matrix[0])
+  line = Matrix[index]
 
-  return is_finish(Matrix), Matrix
+  tmp = line.copy()
 
-def 
+  ok = coloring_chain(line, sequence, M-1, len(sequence))
+  #print("coloring_chain: ok", ok, line, sequence, M-1, len(sequence))
+
+  newCol = []
+  for m in range(M) : 
+    if tmp[m]!=line[m] : 
+      newCol.append(m)
+
+  return ok, Matrix, newCol
+
+
+
+# Fonction facultative pour mieux metter à jour la nouvelle colonne
+def changeCol(Matrix, index, col) : 
+  N = len(Matrix)
+  for n in range(N) : 
+    line = Matrix[n].copy()
+    line[index] = col[n]
+    Matrix[n] = line.copy()
+  return Matrix
+
+def getCol(Matrix, index) : 
+  N = len(Matrix)
+  col = [Matrix[k][index] for k in range(N)]
+  return col
+
+def EmptyCounter(Matrix) : 
+  N = len(Matrix)
+  M = len(Matrix[0])
+  L = [Matrix[n][m] for n in range(N) for m in range(M) if Matrix[n][m]==-1]
+  return len(L)
+
+
+
+def ColoreColonne(Matrix, index, sequence) : 
+  """
+  Paramètre : 
+    Matrix : matrice à traiter
+    index : indice de la colonne à traiter
+    sequence : séquence de bloc à colorer sur chaque colonne `current_line`
+  Retoure `True` si la matrice est finie de colorer et `False` sinon, avec la matrice déjà traiter
+  """
+  N = len(Matrix)
+  M = len(Matrix[0])
+
+  col = getCol(Matrix, index)
+  tmp = col.copy()
+  
+  ok = coloring_chain(col, sequence, N-1, len(sequence))
+
+  newLine = []
+  for n in range(N) : 
+    if tmp[n]!=col[n] : 
+      newLine.append(n)
+
+  Matrix = changeCol(Matrix, index, col)
+    
+  return ok, Matrix, newLine
+
+
+
+
+
+def COLORATION(Matrix, list_line, list_col) : 
+  A = CopierMatrice(Matrix)
+  N = len(Matrix)
+  M = len(Matrix[0])
+
+  lines = [A[n] for n in range(N) if -1 in A[n]]
+  cols = [getCol(A, i) for i in range(M) if -1 in getCol(A, i)]
+
+  empty = 0
+
+  ok1, ok2 = False, False
+  while lines!=[] or cols!=[]: 
+    empty = EmptyCounter(A)
+    for line in range(N) : 
+      l = A[line].copy()
+      ok, A, newCol = ColoreLigne(A, line, list_line[line])
+      if not ok : return False, [[-1]*M]*N
+      lines.remove(l) if l in lines else lines
+      New = [getCol(Matrix, index) for index in newCol]
+      cols+=New 
+
+    for col in range(M) : 
+      c = getCol(Matrix, col)
+      ok, A, newLine = ColoreColonne(A, col, list_col[col])
+      if not ok : return False, [[-1]*M]*N
+      cols.remove(c) if c in cols else cols
+      New = [A[index] for index in newLine]
+      lines+=New
+    print(EmptyCounter(A)==empty)
+    if EmptyCounter(A)==empty : 
+      break
+
+
+  if is_finish(A) : 
+    return True, A 
+  else : 
+    return -1, A
+
+def show(Matrix) : 
+  plt.matshow(Matrix)
