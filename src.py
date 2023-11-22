@@ -223,12 +223,14 @@ sns.set(context="notebook", style="whitegrid", palette="hls", font="sans-serif",
 from matplotlib import pyplot, transforms
 
 
+def nonogramStyle(Matrix) : 
+  plt.matshow(Matrix)
 
-def show(Matrix, list_line, list_col, width=20, length=12, textsize1=40, textsize0=20, labelsize=10) : 
+def show(Matrix, list_line, list_col, width=20, length=12, textsize1=50, textsize0=30, labelsize=10) : 
   N = len(Matrix)
   M = len(Matrix[0])
 
-  mpl.rcParams['figure.figsize'] = (width, length)
+  mpl.rcParams['figure.figsize'] = (width/2, length/2)
 
   _, Matrix = Enumeration(Matrix, list_line, list_col)
   zero = [[], []]
