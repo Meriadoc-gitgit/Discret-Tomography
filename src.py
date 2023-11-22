@@ -115,7 +115,6 @@ def ColoreLigne(Matrix, index, sequence) :
   tmp = line.copy()
 
   ok = coloring_chain(line, sequence, M-1, len(sequence))
-  #print("coloring_chain: ok", ok, line, sequence, M-1, len(sequence))
 
   newCol = []
   for m in range(M) : 
@@ -187,13 +186,13 @@ def COLORATION(Matrix, list_line, list_col) :
 
   empty = 0
 
-  ok1, ok2 = False, False
   while lines!=[] or cols!=[]: 
     empty = EmptyCounter(A)
     for line in range(N) : 
       l = A[line].copy()
       ok, A, newCol = ColoreLigne(A, line, list_line[line])
-      if not ok : return False, [[-1]*M]*N
+      if ok==False : return False, [[-1]*M]*N
+      lines = [A[n] for n in range(N) if -1 in A[n]]
       lines.remove(l) if l in lines else lines
       New = [getCol(Matrix, index) for index in newCol]
       cols+=New 
@@ -201,11 +200,12 @@ def COLORATION(Matrix, list_line, list_col) :
     for col in range(M) : 
       c = getCol(Matrix, col)
       ok, A, newLine = ColoreColonne(A, col, list_col[col])
-      if not ok : return False, [[-1]*M]*N
+      if ok==False : return False, [[-1]*M]*N
+      cols = [getCol(A, i) for i in range(M) if -1 in getCol(A, i)]
       cols.remove(c) if c in cols else cols
       New = [A[index] for index in newLine]
       lines+=New
-    print(EmptyCounter(A)==empty)
+    #print(EmptyCounter(A), len(lines), len(cols))
     if EmptyCounter(A)==empty : 
       break
 
@@ -215,5 +215,133 @@ def COLORATION(Matrix, list_line, list_col) :
   else : 
     return -1, A
 
-def show(Matrix) : 
-  plt.matshow(Matrix)
+
+
+import matplotlib as mpl
+import seaborn as sns
+sns.set(context="notebook", style="whitegrid", palette="hls", font="sans-serif", font_scale=1.4) 
+from matplotlib import pyplot, transforms
+
+
+
+def show(Matrix, list_line, list_col, width=20, length=12, textsize1=40, textsize0=20, labelsize=10) : 
+  N = len(Matrix)
+  M = len(Matrix[0])
+
+  mpl.rcParams['figure.figsize'] = (width, length)
+
+  _, Matrix = Enumeration(Matrix, list_line, list_col)
+  zero = [[], []]
+  one = [[], []]
+  for n in range(N) : 
+   for m in range(M) : 
+    if Matrix[n][m]==0 : zero[0].append(n); zero[1].append(m) 
+    elif Matrix[n][m]==1 : one[0].append(n); one[1].append(m)
+  
+  base = pyplot.gca().transData
+  rot = transforms.Affine2D().rotate_deg(270)
+  A = plt.scatter(zero[0], zero[1], marker="x", c="orange", s=textsize0, transform= rot+base)
+  A = plt.scatter(one[0], one[1], marker="o", c="black", s=textsize1, transform= rot+base)
+
+  lines = [str(i) for i in list_line]
+  lines.reverse()
+  cols = [str(i) for i in list_col]
+
+  x = range(M)
+  y = range(-N, 0)
+
+  plt.xticks(x, cols)
+  plt.yticks(y, lines)
+
+  plt.xticks(rotation=90)
+  plt.xticks(fontsize=labelsize)
+  plt.yticks(fontsize=labelsize)
+
+  plt.show()
+
+
+def Propagation(Matrix, i, j, c, list_line, list_col) : 
+  A = CopierMatrice(Matrix)
+  N = len(Matrix)
+  M = len(Matrix[0])
+
+  if A[i][j]!=-1 and c!=-1: 
+    if EmptyCounter(A)!=0 : 
+      return -1, A 
+    else : return True, A
+
+  line = A[i].copy()
+  line[j] = c 
+  A[i] = line.copy()
+
+  lines = [A[i].copy()]
+  cols = [getCol(Matrix, j)]
+
+  empty = 0
+
+  while lines!=[] or cols!=[]: 
+    empty = EmptyCounter(A)
+    l = A[i].copy()
+    for line in range(N) : 
+      #if l in lines : 
+      ok, A, newCol = ColoreLigne(A, line, list_line[line])
+      if ok==False : return False, [[-1]*M]*N
+      lines = [A[n] for n in range(N) if -1 in A[n]]
+      lines.remove(l) if l in lines else lines
+      New = [getCol(Matrix, index) for index in newCol]
+      cols+=New 
+
+    c = getCol(Matrix, j)
+    for col in range(M) : 
+      #if c in cols : 
+      ok, A, newLine = ColoreColonne(A, col, list_col[col])
+      if ok==False : return False, [[-1]*M]*N
+      cols = [getCol(A, i) for i in range(M) if -1 in getCol(A, i)]
+      cols.remove(c) if c in cols else cols
+      New = [A[index] for index in newLine]
+      lines+=New
+    #print(EmptyCounter(A), len(lines), len(cols))
+    if EmptyCounter(A)==empty : 
+      break
+
+    if EmptyCounter(A)==empty : 
+      break
+
+  if is_finish(A) : 
+    return True, A 
+  else : 
+    return -1, A
+
+
+
+
+def Enum_Rec(Matrix, k, c, list_line, list_col) : 
+  N = len(Matrix)
+  M = len(Matrix[0])
+
+  if k<=N*M : 
+    i = k//M
+    j = k % M 
+    ok, A = Propagation(Matrix, i, j, c, list_line, list_col)
+
+    if ok==-1 : 
+      k = k+1
+      P, A = Enum_Rec(A, k, 0, list_line, list_col)
+      Q, A = Enum_Rec(A, k, 1, list_line, list_col)
+      return P or Q, A
+
+    elif ok==True : return True, A
+    elif ok==False : return False, [[-1]*M]*N
+  
+  else : return True, A
+
+
+
+def Enumeration(Matrix, list_line, list_col) : 
+  ok, Matrix = COLORATION(Matrix, list_line, list_col)
+  
+  if ok==False : return False, [[-1]*M]*N
+  P, Matrix = Enum_Rec(Matrix, 0, 0, list_line, list_col)
+  Q, Matrix = Enum_Rec(Matrix, 0, 1, list_line, list_col)
+
+  return P or Q, Matrix
