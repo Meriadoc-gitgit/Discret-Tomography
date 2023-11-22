@@ -223,7 +223,9 @@ sns.set(context="notebook", style="whitegrid", palette="hls", font="sans-serif",
 from matplotlib import pyplot, transforms
 
 
-def nonogramStyle(Matrix) : 
+def nonogramStyle(Matrix, width=20, length=12) : 
+
+  mpl.rcParams['figure.figsize'] = (width/2, length/2)
   plt.matshow(Matrix)
 
 def show(Matrix, list_line, list_col, width=20, length=12, textsize1=50, textsize0=30, labelsize=10) : 
